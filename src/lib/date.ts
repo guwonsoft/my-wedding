@@ -52,13 +52,22 @@ export function countdown(target: string, now = Date.now()) {
   const diff = new Date(target).getTime() - now;
   const clamped = Math.max(diff, 0);
   const sec = Math.floor(clamped / 1000);
+
+  // D-day는 시:분이 아니라 "며칠 뒤 날짜인가"로 세야 합니다.
+  // 한국시간 자정끼리 비교해야 예식 당일 아침에 D-0(오늘)로 나옵니다.
+  const kstMidnight = (ms: number) =>
+    Math.floor((ms + KST_OFFSET_MS) / 86400000) * 86400000;
+  const dday = Math.round(
+    (kstMidnight(new Date(target).getTime()) - kstMidnight(now)) / 86400000,
+  );
+
   return {
     passed: diff <= 0,
     days: Math.floor(sec / 86400),
     hours: Math.floor((sec % 86400) / 3600),
     minutes: Math.floor((sec % 3600) / 60),
     seconds: sec % 60,
-    /** 자정 기준 D-day (D-30 처럼 표기용) */
-    dday: Math.ceil(diff / 86400000),
+    /** 한국시간 자정 기준 D-day (D-30 처럼 표기용). 예식 당일이면 0 */
+    dday,
   };
 }

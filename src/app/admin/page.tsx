@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { isAdmin } from "@/lib/admin";
-import { getSupabase } from "@/lib/supabase";
 import { wedding } from "@/config/wedding";
 import { AdminLogin } from "@/components/AdminLogin";
 import { AdminLogout } from "@/components/AdminLogout";
@@ -8,20 +7,35 @@ import { AdminLogout } from "@/components/AdminLogout";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "참석 여부 집계",
+  title: "참석 여부 집계 (구글 스프레드시트)",
   robots: { index: false, follow: false },
 };
 
 type Row = {
-  id: string;
   created_at: string;
-  side: "groom" | "bride";
+  side: string;
   name: string;
-  phone: string | null;
+  phone: string;
   attending: boolean;
   party_size: number;
-  meal: "yes" | "no" | "undecided";
-  message: string | null;
+  meal: string;
+};
+
+type SheetResponse = {
+  ok: boolean;
+  stats?: {
+    total: number;
+    attendingCount: number;
+    attendingHeads: number;
+    mealYes: number;
+    mealNo: number;
+    mealUndecided: number;
+    declined: number;
+    groom: number;
+    bride: number;
+  };
+  rows?: Row[];
+  error?: string;
 };
 
 export default async function AdminPage() {
@@ -29,54 +43,79 @@ export default async function AdminPage() {
     return <AdminLogin configured={Boolean(process.env.ADMIN_PASSWORD)} />;
   }
 
-  const supabase = getSupabase();
-  if (!supabase) {
+  const webhookUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL;
+
+  if (!webhookUrl || !webhookUrl.startsWith("http")) {
     return (
       <Shell>
-        <p className="border border-line bg-paper-2 p-5 text-[13px] leading-relaxed text-ink-2">
-          Supabase 환경변수(<code className="font-mono text-accent-2">SUPABASE_URL</code>,{" "}
-          <code className="font-mono text-accent-2">SUPABASE_SERVICE_ROLE_KEY</code>)가 설정되어 있지
-          않습니다.
-        </p>
+        <div className="border border-line bg-paper-2 p-6 text-[13.5px] leading-relaxed text-ink-2">
+          <h2 className="font-bold text-ink text-[16px] mb-3">📋 구글 스프레드시트 연동 대기 중</h2>
+          <p className="mb-4">
+            현재 <code className="font-mono text-accent-2">GOOGLE_SHEET_WEBHOOK_URL</code> 환경변수가 설정되지 않았습니다.
+          </p>
+          <ol className="list-decimal list-inside space-y-2 text-[13px] text-ink-2 mb-5">
+            <li>구글 드라이브에서 새 스프레드시트를 생성합니다.</li>
+            <li>상단 메뉴 [확장 프로그램] → [Apps Script] 를 클릭합니다.</li>
+            <li>프로젝트 루트의 <code className="font-mono text-accent">google-sheets-script.js</code> 내용을 붙여넣고 [배포] → [새 배포] (유형: 웹 앱, 액세스: 모든 사용자)를 진행합니다.</li>
+            <li>발급된 웹 앱 URL을 <code className="font-mono text-accent-2">.env.local</code>의 <code className="font-mono">GOOGLE_SHEET_WEBHOOK_URL</code>에 넣어주세요.</li>
+          </ol>
+          <p className="text-[12px] text-ink-3">
+            ※ 연동이 완료되면 청첩장에서 하객이 제출하는 즉시 구글 시트에 실시간으로 기록됩니다.
+          </p>
+        </div>
       </Shell>
     );
   }
 
-  const { data, error } = await supabase
-    .from("rsvps")
-    .select("id, created_at, side, name, phone, attending, party_size, meal, message")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    return (
-      <Shell>
-        <p className="border border-line bg-paper-2 p-5 text-[13px] text-ink-2">
-          응답을 불러오지 못했습니다: {error.message}
-        </p>
-      </Shell>
-    );
+  let sheetData: SheetResponse = { ok: false };
+  try {
+    const res = await fetch(webhookUrl, {
+      cache: "no-store",
+      redirect: "follow",
+    });
+    if (res.ok) {
+      sheetData = (await res.json()) as SheetResponse;
+    }
+  } catch (err) {
+    console.error("[admin] Google Sheet fetch error:", err);
   }
 
-  const rows = (data ?? []) as Row[];
-  const going = rows.filter((r) => r.attending);
-
-  const sum = (list: Row[]) => list.reduce((acc, r) => acc + (r.party_size || 0), 0);
-  const stats = {
-    responses: rows.length,
-    attendingHeads: sum(going),
-    declined: rows.length - going.length,
-    mealYes: sum(going.filter((r) => r.meal === "yes")),
-    mealUndecided: sum(going.filter((r) => r.meal === "undecided")),
-    mealNo: sum(going.filter((r) => r.meal === "no")),
-    groom: sum(going.filter((r) => r.side === "groom")),
-    bride: sum(going.filter((r) => r.side === "bride")),
+  const rows = sheetData.rows ?? [];
+  const stats = sheetData.stats ?? {
+    total: rows.length,
+    attendingCount: rows.filter((r) => r.attending).length,
+    attendingHeads: rows.filter((r) => r.attending).reduce((acc, r) => acc + (r.party_size || 0), 0),
+    mealYes: rows.filter((r) => r.attending && r.meal === "식사 예정").reduce((acc, r) => acc + (r.party_size || 0), 0),
+    mealUndecided: rows.filter((r) => r.attending && r.meal === "미정").reduce((acc, r) => acc + (r.party_size || 0), 0),
+    mealNo: rows.filter((r) => r.attending && r.meal === "식사 안함").reduce((acc, r) => acc + (r.party_size || 0), 0),
+    declined: rows.filter((r) => !r.attending).length,
+    groom: rows.filter((r) => r.attending && r.side === "신랑측").reduce((acc, r) => acc + (r.party_size || 0), 0),
+    bride: rows.filter((r) => r.attending && r.side === "신부측").reduce((acc, r) => acc + (r.party_size || 0), 0),
   };
 
   return (
     <Shell>
-      {/* 요약 */}
+      {/* 상단 액션 바 */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 bg-paper-2 p-4 border border-line">
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-600" />
+          <span className="text-[13px] font-medium text-ink">구글 스프레드시트 연동 활성화</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <a
+            href="https://sheets.google.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3.5 py-1.5 text-[12px] font-medium text-white transition-opacity hover:opacity-90"
+          >
+            📊 구글 시트 열기 ↗
+          </a>
+        </div>
+      </div>
+
+      {/* 요약 통계 */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat label="응답" value={stats.responses} unit="건" />
+        <Stat label="총 응답" value={stats.total} unit="건" />
         <Stat label="참석 인원" value={stats.attendingHeads} unit="명" accent />
         <Stat label="식사 예정" value={stats.mealYes} unit="명" accent />
         <Stat label="불참" value={stats.declined} unit="건" />
@@ -98,18 +137,18 @@ export default async function AdminPage() {
             <b className="text-ink">{stats.mealYes + stats.mealUndecided}명</b>)
           </>
         )}
-        입니다. 예식장 계약 인원과 비교해 보세요.
+        입니다. 예식장 뷔페 예약 인원과 대조해 보세요.
       </p>
 
       {/* 표 */}
       <div className="mt-8 overflow-x-auto border border-line bg-paper">
-        <table className="w-full min-w-[760px] border-collapse text-left">
+        <table className="w-full min-w-[680px] border-collapse text-left">
           <thead>
             <tr className="border-b border-line bg-paper-2">
-              {["응답일시", "구분", "성함", "연락처", "참석", "인원", "식사", "메시지"].map((h) => (
+              {["접수일시", "구분", "성함", "연락처", "참석", "인원", "식사"].map((h) => (
                 <th
                   key={h}
-                  className="px-3 py-2.5 font-mono text-[10px] font-normal tracking-[0.14em] text-ink-3 uppercase whitespace-nowrap"
+                  className="px-3.5 py-2.5 font-mono text-[10.5px] font-normal tracking-[0.14em] text-ink-3 uppercase whitespace-nowrap"
                 >
                   {h}
                 </th>
@@ -119,27 +158,19 @@ export default async function AdminPage() {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-3 py-16 text-center text-[13px] text-ink-3">
-                  아직 응답이 없습니다.
+                <td colSpan={7} className="px-3 py-16 text-center text-[13px] text-ink-3">
+                  아직 응답이 없거나 시트에서 데이터를 불러오는 중입니다.
                 </td>
               </tr>
             ) : (
-              rows.map((r) => (
-                <tr key={r.id} className="border-b border-line/60 last:border-0">
-                  <td className="px-3 py-2.5 font-mono text-[11px] text-ink-3 tnum whitespace-nowrap">
-                    {new Date(r.created_at).toLocaleString("ko-KR", {
-                      timeZone: "Asia/Seoul",
-                      month: "2-digit",
-                      day: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+              rows.map((r, idx) => (
+                <tr key={idx} className="border-b border-line/60 last:border-0">
+                  <td className="px-3.5 py-2.5 font-mono text-[11px] text-ink-3 tnum whitespace-nowrap">
+                    {r.created_at}
                   </td>
-                  <td className="px-3 py-2.5 text-[12.5px] whitespace-nowrap">
-                    {r.side === "bride" ? "신부측" : "신랑측"}
-                  </td>
-                  <td className="px-3 py-2.5 text-[13px] font-medium whitespace-nowrap">{r.name}</td>
-                  <td className="px-3 py-2.5 font-mono text-[11.5px] text-ink-2 tnum whitespace-nowrap">
+                  <td className="px-3.5 py-2.5 text-[12.5px] whitespace-nowrap">{r.side}</td>
+                  <td className="px-3.5 py-2.5 text-[13px] font-medium whitespace-nowrap">{r.name}</td>
+                  <td className="px-3.5 py-2.5 font-mono text-[11.5px] text-ink-2 tnum whitespace-nowrap">
                     {r.phone ? (
                       <a href={`tel:${r.phone.replace(/-/g, "")}`} className="hover:text-accent">
                         {r.phone}
@@ -148,21 +179,12 @@ export default async function AdminPage() {
                       <span className="text-ink-3">—</span>
                     )}
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-3.5 py-2.5 whitespace-nowrap">
                     <Badge tone={r.attending ? "on" : "off"}>{r.attending ? "참석" : "불참"}</Badge>
                   </td>
-                  <td className="px-3 py-2.5 font-mono text-[12.5px] tnum">{r.party_size || "—"}</td>
-                  <td className="px-3 py-2.5 text-[12.5px] whitespace-nowrap">
-                    {r.attending
-                      ? r.meal === "yes"
-                        ? "예정"
-                        : r.meal === "no"
-                          ? "안함"
-                          : "미정"
-                      : "—"}
-                  </td>
-                  <td className="max-w-[280px] px-3 py-2.5 text-[12.5px] text-ink-2">
-                    {r.message || <span className="text-ink-3">—</span>}
+                  <td className="px-3.5 py-2.5 font-mono text-[12.5px] tnum">{r.party_size || "—"}</td>
+                  <td className="px-3.5 py-2.5 text-[12.5px] whitespace-nowrap">
+                    {r.attending ? r.meal : "—"}
                   </td>
                 </tr>
               ))

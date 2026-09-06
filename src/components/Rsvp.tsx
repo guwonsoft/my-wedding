@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { wedding } from "@/config/wedding";
 import { formatStamp } from "@/lib/date";
 import { useClientValue } from "@/hooks/useClient";
@@ -18,7 +18,6 @@ type FormState = {
   phone: string;
   partySize: number;
   meal: Meal;
-  message: string;
   agree: boolean;
   /** 봇 유인용 — 사람은 절대 채우지 않는 칸 */
   website: string;
@@ -40,7 +39,6 @@ const INITIAL: FormState = {
   phone: "",
   partySize: 1,
   meal: "yes",
-  message: "",
   agree: false,
   website: "",
 };
@@ -78,7 +76,6 @@ export function Rsvp() {
           ...form,
           name: form.name.trim(),
           phone: form.phone.trim(),
-          message: form.message.trim(),
           partySize: form.attending ? form.partySize : 0,
         }),
       });
@@ -171,8 +168,9 @@ export function Rsvp() {
               </Field>
 
               {/* 성함 */}
-              <Field label="성함" required>
+              <Field label="성함" required htmlFor="rsvp-name">
                 <input
+                  id="rsvp-name"
                   type="text"
                   value={form.name}
                   onChange={(e) => set("name", e.target.value)}
@@ -184,8 +182,9 @@ export function Rsvp() {
               </Field>
 
               {/* 연락처 */}
-              <Field label="연락처" hint="선택 · 변동 사항 안내에만 사용합니다">
+              <Field label="연락처" hint="선택 · 변동 사항 안내에만 사용합니다" htmlFor="rsvp-phone">
                 <input
+                  id="rsvp-phone"
                   type="tel"
                   inputMode="tel"
                   value={form.phone}
@@ -228,18 +227,6 @@ export function Rsvp() {
                   </div>
                 </div>
               </div>
-
-              {/* 메시지 */}
-              <Field label="전하실 말씀" hint="선택">
-                <textarea
-                  value={form.message}
-                  onChange={(e) => set("message", e.target.value)}
-                  rows={3}
-                  maxLength={200}
-                  placeholder="두 분의 앞날을 축복합니다."
-                  className="w-full resize-none border-b border-line bg-transparent py-2.5 leading-relaxed placeholder:text-ink-3/60 focus:border-accent focus:outline-none"
-                />
-              </Field>
 
               {/* 허니팟 */}
               <div aria-hidden className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
@@ -297,23 +284,65 @@ function Field({
   label,
   hint,
   required,
+  htmlFor,
   children,
 }: {
   label: string;
   hint?: string;
   required?: boolean;
+  /** 실제 폼 컨트롤의 id — 주면 <label>로 연결되고, 없으면 role="group"으로 묶습니다. */
+  htmlFor?: string;
   children: React.ReactNode;
 }) {
+  const autoId = useId();
+  const labelId = `${autoId}-label`;
+  const hintId = hint ? `${autoId}-hint` : undefined;
+
+  const head = (
+    <>
+      {label}
+      {required && (
+        <>
+          <span aria-hidden className="ml-1 text-accent">
+            *
+          </span>
+          <span className="sr-only"> (필수)</span>
+        </>
+      )}
+    </>
+  );
+
   return (
     <div>
       <div className="mb-2 flex items-baseline gap-2">
-        <span className="font-mono text-[10px] tracking-[0.18em] text-ink-2 uppercase">
-          {label}
-          {required && <span className="ml-1 text-accent">*</span>}
-        </span>
-        {hint && <span className="text-[10.5px] text-ink-3">{hint}</span>}
+        {htmlFor ? (
+          <label
+            htmlFor={htmlFor}
+            className="font-mono text-[10px] tracking-[0.18em] text-ink-2 uppercase"
+          >
+            {head}
+          </label>
+        ) : (
+          <span
+            id={labelId}
+            className="font-mono text-[10px] tracking-[0.18em] text-ink-2 uppercase"
+          >
+            {head}
+          </span>
+        )}
+        {hint && (
+          <span id={hintId} className="text-[10.5px] text-ink-3">
+            {hint}
+          </span>
+        )}
       </div>
-      {children}
+      {htmlFor ? (
+        children
+      ) : (
+        <div role="group" aria-labelledby={labelId} aria-describedby={hintId}>
+          {children}
+        </div>
+      )}
     </div>
   );
 }

@@ -45,3 +45,6 @@ next-env.d.ts
 
 # npm run placeholders 로 만든 임시 사진 (실제 사진은 .jpg)
 public/gallery/*.png
+
+# 갤러리 원본 사진 (인쇄용 대용량 PNG — 변환본만 public/gallery 에 커밋)
+/웨딩사진/

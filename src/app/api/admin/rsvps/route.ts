@@ -1,4 +1,3 @@
-import { getSupabase } from "@/lib/supabase";
 import { isAdmin } from "@/lib/admin";
 import { wedding } from "@/config/wedding";
 
@@ -8,36 +7,56 @@ export async function GET() {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const supabase = getSupabase();
-  if (!supabase) return new Response("Database not configured", { status: 503 });
+  const webhookUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL;
+  let rows: string[][] = [];
 
-  const { data, error } = await supabase
-    .from("rsvps")
-    .select("created_at, side, name, phone, attending, party_size, meal, message")
-    .order("created_at", { ascending: false });
+  if (webhookUrl && webhookUrl.startsWith("http")) {
+    try {
+      const res = await fetch(webhookUrl, { cache: "no-store", redirect: "follow" });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          rows?: Array<{
+            created_at: string;
+            side: string;
+            name: string;
+            phone: string;
+            attending: boolean;
+            party_size: number;
+            meal: string;
+          }>;
+        };
+        rows = (data.rows ?? []).map((r) => [
+          r.created_at,
+          r.side,
+          r.name,
+          r.phone || "",
+          r.attending ? "참석" : "불참",
+          String(r.party_size || 0),
+          r.attending ? r.meal : "—",
+        ]);
+      }
+    } catch (err) {
+      console.error("[admin-rsvps] Failed to fetch from Google Sheet:", err);
+    }
+  }
 
-  if (error) return new Response("Query failed", { status: 500 });
+  const header = ["접수일시", "구분", "성함", "연락처", "참석여부", "참석인원", "식사여부"];
 
-  const header = ["응답일시", "구분", "성함", "연락처", "참석여부", "인원", "식사", "메시지"];
-  const rows = (data ?? []).map((r) => [
-    new Date(r.created_at as string).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }),
-    r.side === "bride" ? "신부측" : "신랑측",
-    r.name as string,
-    (r.phone as string | null) ?? "",
-    r.attending ? "참석" : "불참",
-    String(r.party_size ?? 0),
-    r.meal === "yes" ? "예정" : r.meal === "no" ? "안함" : "미정",
-    ((r.message as string | null) ?? "").replace(/\r?\n/g, " "),
-  ]);
+  // 엑셀 수식 삽입 취약점 방지
+  const escapeCell = (cell: string) => {
+    const v = String(cell);
+    const safe = /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
+    return `"${safe.replace(/"/g, '""')}"`;
+  };
 
   const csv = [header, ...rows]
-    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+    .map((row) => row.map(escapeCell).join(","))
     .join("\r\n");
 
   const stamp = new Date().toISOString().slice(0, 10);
   const filename = `rsvp-${stamp}.csv`;
 
-  return new Response("﻿" + csv, {
+  return new Response("\uFEFF" + csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(

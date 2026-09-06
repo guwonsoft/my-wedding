@@ -66,6 +66,12 @@ export function Photo({ index, className = "", alt, src, ...props }: PhotoProps)
     );
   }
 
+  // preload 사진(커버)은 이 페이지의 LCP입니다.
+  // 서버가 만든 HTML에 opacity-0이 박히면 preload를 해두고도 하이드레이션 전까지
+  // 화면이 비어 있게 되므로, 커버만은 페이드 없이 즉시 보이게 합니다.
+  // (Next 16에서 priority는 deprecated → preload. 옛 prop도 함께 봅니다.)
+  const fade = !props.preload && !props.priority;
+
   return (
     <>
       <Image
@@ -73,8 +79,12 @@ export function Photo({ index, className = "", alt, src, ...props }: PhotoProps)
         key={typeof current === "string" ? current : undefined}
         src={current}
         alt={alt}
-        className={`${className} transition-opacity duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          state === "ready" ? "opacity-100" : "opacity-0"
+        className={`${className} ${
+          fade
+            ? `transition-opacity duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                state === "ready" ? "opacity-100" : "opacity-0"
+              }`
+            : ""
         }`}
         onLoad={() => setState("ready")}
         onError={onError}

@@ -55,7 +55,14 @@ export const metadata: Metadata = {
     description: wedding.meta.description,
     images: ogImages?.map((i) => i.url),
   },
-  robots: { index: true, follow: true },
+  // 계좌번호·가족 연락처·하객 방명록이 있는 페이지입니다.
+  // 청첩장은 링크를 받은 사람만 보면 되므로 검색엔진 색인을 막습니다.
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: { index: false, follow: false, noimageindex: true },
+  },
   formatDetection: { telephone: false, address: false, email: false },
 };
 

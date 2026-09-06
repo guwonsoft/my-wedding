@@ -1,6 +1,7 @@
 import { wedding } from "@/config/wedding";
 import { Section, SectionLabel, VerticalRule } from "./ui";
 import { ContactSheet } from "./ContactSheet";
+import { NoticeButton } from "./NoticeModal";
 
 export function Greeting() {
   const { groom, bride, greeting } = wedding;
@@ -43,10 +44,12 @@ export function Greeting() {
           ))}
         </div>
 
-        <div className="mt-9" data-reveal style={{ ["--reveal-delay" as string]: "200ms" }}>
+        <div className="mt-9 flex flex-wrap items-center justify-center gap-3" data-reveal style={{ ["--reveal-delay" as string]: "200ms" }}>
           <ContactSheet />
+          <NoticeButton />
         </div>
       </div>
     </Section>
   );
 }
+

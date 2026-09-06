@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 const ITEMS = [
   { href: "#location", label: "오시는 길", icon: PinIcon },
   { href: "#rsvp", label: "참석 여부", icon: CheckIcon },
-  { href: "#guestbook", label: "축하 한마디", icon: PenIcon },
   { href: "#share", label: "공유", icon: ShareIcon },
 ];
 
@@ -58,7 +57,7 @@ export function Dock() {
         }`}
       >
         <div className="border-t border-line/80 bg-paper/88 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
-          <ul className="grid grid-cols-4">
+          <ul className="grid grid-cols-3">
             {ITEMS.map(({ href, label, icon: Icon }) => (
               <li key={href}>
                 <button

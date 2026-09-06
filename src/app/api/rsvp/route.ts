@@ -1,5 +1,4 @@
 import type { NextRequest } from "next/server";
-import { getSupabase, NOT_CONFIGURED } from "@/lib/supabase";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { wedding } from "@/config/wedding";
 
@@ -10,7 +9,6 @@ type Payload = {
   phone?: unknown;
   partySize?: unknown;
   meal?: unknown;
-  message?: unknown;
   agree?: unknown;
   website?: unknown;
 };
@@ -50,8 +48,7 @@ export async function POST(req: NextRequest) {
   const side = body.side === "bride" ? "bride" : "groom";
   const attending = body.attending !== false;
   const phoneRaw = typeof body.phone === "string" ? body.phone.trim() : "";
-  const phone = phoneRaw.slice(0, 20) || null;
-  const message = typeof body.message === "string" ? body.message.trim().slice(0, 200) : "";
+  const phone = phoneRaw.slice(0, 20) || "";
   const meal = MEALS.includes(body.meal as (typeof MEALS)[number])
     ? (body.meal as (typeof MEALS)[number])
     : "undecided";
@@ -61,22 +58,37 @@ export async function POST(req: NextRequest) {
     ? Math.min(10, Math.max(1, Number.isFinite(rawSize) ? Math.floor(rawSize) : 1))
     : 0;
 
-  const supabase = getSupabase();
-  if (!supabase) return Response.json(NOT_CONFIGURED, { status: 503 });
+  const webhookUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL;
 
-  const { error } = await supabase.from("rsvps").insert({
-    name,
-    phone,
-    side,
-    attending,
-    party_size: partySize,
-    meal: attending ? meal : "no",
-    message: message || null,
-  });
+  if (webhookUrl && webhookUrl.startsWith("http")) {
+    try {
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          phone,
+          side,
+          attending,
+          partySize,
+          meal: attending ? meal : "no",
+        }),
+        redirect: "follow",
+      });
 
-  if (error) {
-    console.error("[rsvp] insert failed:", error.message);
-    return bad("저장 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.", 500);
+      if (!response.ok) {
+        console.error("[rsvp] Google Sheet error status:", response.status);
+      }
+    } catch (sheetError) {
+      console.error("[rsvp] Google Sheet fetch failed:", sheetError);
+      return bad("구글 스프레드시트 저장 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.", 500);
+    }
+  } else {
+    // 환경변수가 아직 설정되지 않은 로컬 개발 환경용 로그
+    console.warn(
+      "[rsvp] ⚠️ GOOGLE_SHEET_WEBHOOK_URL 이 설정되지 않았습니다. 로컬 콘솔에 기록합니다:\n",
+      { name, phone, side, attending, partySize, meal }
+    );
   }
 
   return Response.json({ ok: true });

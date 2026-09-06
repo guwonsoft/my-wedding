@@ -1,10 +1,9 @@
 "use client";
 
 import Script from "next/script";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { wedding } from "@/config/wedding";
 
-/* 카카오맵 SDK 중 실제로 쓰는 부분만 좁게 타입 선언 */
 type LatLng = object;
 type MapInstance = {
   setCenter(p: LatLng): void;
@@ -16,93 +15,132 @@ type KakaoMaps = {
   LatLng: new (lat: number, lng: number) => LatLng;
   Map: new (el: HTMLElement, opts: { center: LatLng; level: number }) => MapInstance;
   Marker: new (opts: { position: LatLng; map: MapInstance }) => unknown;
+  CustomOverlay: new (opts: { position: LatLng; content: string; yAnchor?: number }) => {
+    setMap(map: MapInstance | null): void;
+  };
   ZoomControl: new () => object;
   ControlPosition: { RIGHT: unknown };
 };
+
 declare global {
   interface Window {
     kakao?: { maps: KakaoMaps };
   }
 }
 
-const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_JS_KEY || "0e19f5e6eb22ae7e17f5219094123eed";
 
 export function KakaoMap() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [failed, setFailed] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
 
-  const init = useCallback(() => {
+  const initMap = useCallback(() => {
     const maps = window.kakao?.maps;
-    if (!maps || !ref.current) {
-      setFailed(true);
+    if (!maps || !containerRef.current) {
       return;
     }
+
     maps.load(() => {
-      if (!ref.current) return;
-      const center = new maps.LatLng(wedding.venue.lat, wedding.venue.lng);
-      const map = new maps.Map(ref.current, { center, level: 4 });
-      new maps.Marker({ position: center, map });
-      map.addControl(new maps.ZoomControl(), maps.ControlPosition.RIGHT);
-      // 페이지를 스크롤하다 지도 위에서 갇히지 않도록 확대는 컨트롤로만.
-      map.setZoomable(false);
+      if (!containerRef.current) return;
+      try {
+        const center = new maps.LatLng(wedding.venue.lat, wedding.venue.lng);
+        const map = new maps.Map(containerRef.current, { center, level: 3 });
+
+        // 마커 생성
+        new maps.Marker({
+          position: center,
+          map,
+        });
+
+        // 예식장 위치 안내 말풍선 (커스텀 오버레이)
+        const overlayContent = `
+          <div style="
+            background: #ffffff;
+            padding: 6px 14px;
+            border-radius: 16px;
+            border: 1px solid #d9d4cc;
+            box-shadow: 0 4px 14px rgba(35, 32, 28, 0.16);
+            font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #23201c;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+          ">
+            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#8c7b70;"></span>
+            ${wedding.venue.name} <span style="font-size:11.5px;color:#7a7267;font-weight:400;">(${wedding.venue.hall})</span>
+          </div>
+        `;
+
+        const overlay = new maps.CustomOverlay({
+          position: center,
+          yAnchor: 2.15,
+          content: overlayContent,
+        });
+        overlay.setMap(map);
+
+        // 확대/축소 컨트롤
+        map.addControl(new maps.ZoomControl(), maps.ControlPosition.RIGHT);
+        // 스크롤 갇힘 방지 (확대는 우측 버튼으로만)
+        map.setZoomable(false);
+        setLoaded(true);
+      } catch (err) {
+        console.error("Kakao map init error:", err);
+        setError(true);
+      }
     });
   }, []);
 
-  // 키가 없거나 로드 실패 → 좌표를 그대로 보여주는 자리표시자
-  if (!KAKAO_KEY || failed) return <MapPlaceholder configured={Boolean(KAKAO_KEY)} />;
+  // 이미 카카오 스크립트가 로드되어 있는 경우 즉시 초기화
+  useEffect(() => {
+    if (window.kakao?.maps) {
+      initMap();
+    }
+  }, [initMap]);
 
   return (
-    <>
+    <div className="relative h-[280px] w-full overflow-hidden bg-paper-3">
       <Script
         src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&autoload=false`}
         strategy="afterInteractive"
-        onReady={init}
-        onError={() => setFailed(true)}
+        onLoad={initMap}
+        onReady={initMap}
+        onError={() => setError(true)}
       />
+
       <div
-        ref={ref}
-        className="h-[240px] w-full bg-paper-3"
+        id="kakao-map-container"
+        ref={containerRef}
+        className="h-full w-full"
         role="img"
-        aria-label={`${wedding.venue.name} 위치 지도`}
+        aria-label={`${wedding.venue.name} 카카오맵 위치 지도`}
       />
-    </>
-  );
-}
 
-/** 지도 키가 없어도 화면이 비지 않도록 — 좌표/주소를 도면처럼 보여줍니다 */
-function MapPlaceholder({ configured }: { configured: boolean }) {
-  return (
-    <div className="relative h-[240px] w-full overflow-hidden bg-paper-3">
-      {/* 모눈 */}
-      <div
-        className="absolute inset-0 opacity-[0.5]"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, rgba(35,32,28,0.07) 1px, transparent 1px), linear-gradient(to bottom, rgba(35,32,28,0.07) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
-        aria-hidden
-      />
-      {/* 십자선 */}
-      <div className="absolute top-1/2 right-0 left-0 h-px bg-line" aria-hidden />
-      <div className="absolute top-0 bottom-0 left-1/2 w-px bg-line" aria-hidden />
+      {/* 로딩 표시 */}
+      {!loaded && !error && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-paper-2 text-ink-3">
+          <span className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+          <span className="font-mono text-[11px] tracking-wider">카카오맵을 불러오는 중입니다...</span>
+        </div>
+      )}
 
-      <div className="relative flex h-full flex-col items-center justify-center gap-2 text-center">
-        <span className="grid h-9 w-9 place-items-center rounded-full border border-accent bg-paper/80">
-          <span className="h-2 w-2 rounded-full bg-accent" />
-        </span>
-        <p className="font-[family-name:var(--font-ko-serif)] text-[14px] text-ink">
-          {wedding.venue.name}
-        </p>
-        <p className="font-mono text-[10px] tracking-[0.14em] text-ink-3 tnum">
-          {wedding.venue.lat.toFixed(5)}, {wedding.venue.lng.toFixed(5)}
-        </p>
-        {!configured && (
-          <p className="mt-1 font-mono text-[9px] tracking-[0.1em] text-ink-3/70">
-            NEXT_PUBLIC_KAKAO_JS_KEY 미설정
+      {/* 도메인 미등록 등으로 로드 실패 시 안내 */}
+      {error && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-paper-2">
+          <p className="font-[family-name:var(--font-ko-serif)] text-[14px] font-semibold text-ink">
+            카카오맵 로드 대기 중
           </p>
-        )}
-      </div>
+          <p className="mt-1 text-[12px] text-ink-2 leading-relaxed max-w-[280px]">
+            카카오 개발자 콘솔에서 도메인(<code className="font-mono text-accent">http://localhost:3000</code>) 등록을 확인해 주세요.
+          </p>
+          <p className="mt-2 font-mono text-[10px] text-ink-3">
+            좌표: {wedding.venue.lat}, {wedding.venue.lng}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
