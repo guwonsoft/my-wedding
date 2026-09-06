@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 예시 파일은 커밋합니다
+!.env.example
+
+# npm run placeholders 로 만든 임시 사진 (실제 사진은 .jpg)
+public/gallery/*.png
