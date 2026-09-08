@@ -3,26 +3,18 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-const STORAGE_KEY = "wedding:notice-hide-until";
+/** 팝업이 닫힐 때 알리는 이벤트 — 배경음악(Bgm)이 이 신호를 받아 재생을 시작합니다. */
+export const NOTICE_CLOSED_EVENT = "wedding:notice-closed";
 
 export function NoticeModal() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  // 안내사항은 매 방문마다 반드시 보여드립니다. (숨김 저장 없음)
   useEffect(() => {
     setMounted(true);
-    try {
-      const hideUntil = localStorage.getItem(STORAGE_KEY);
-      if (!hideUntil || Date.now() > Number(hideUntil)) {
-        // 첫 방문이거나 숨김 기한이 지났으면 팝업 표시
-        const timer = setTimeout(() => {
-          setOpen(true);
-        }, 400);
-        return () => clearTimeout(timer);
-      }
-    } catch {
-      setOpen(true);
-    }
+    const timer = setTimeout(() => setOpen(true), 400);
+    return () => clearTimeout(timer);
   }, []);
 
   // 커스텀 이벤트로 언제든 다시 열 수 있도록 지원
@@ -34,18 +26,10 @@ export function NoticeModal() {
 
   const close = () => {
     setOpen(false);
-    // 팝업을 닫는 사용자 터치는 브라우저의 오디오 재생 잠금을 해제하는 제스처로 활용될 수 있습니다.
+    // "확인했습니다"를 누르는 이 터치가 브라우저의 오디오 자동재생 잠금을 풀어주는 제스처입니다.
+    // 이 순간에 배경음악을 시작해야 모바일에서도 확실히 재생됩니다.
+    window.dispatchEvent(new CustomEvent(NOTICE_CLOSED_EVENT));
     window.dispatchEvent(new CustomEvent("user-interacted-with-page"));
-  };
-
-  const closeForToday = () => {
-    try {
-      // 24시간 동안 숨김
-      localStorage.setItem(STORAGE_KEY, String(Date.now() + 24 * 60 * 60 * 1000));
-    } catch {
-      /* 무시 */
-    }
-    close();
   };
 
   if (!mounted || !open) return null;
@@ -140,8 +124,8 @@ export function NoticeModal() {
           마음 깊이 감사의 인사를 올립니다.
         </p>
 
-        {/* 버튼 영역 */}
-        <div className="mt-6 space-y-2">
+        {/* 버튼 영역 — 닫는 방법은 이 버튼 하나뿐입니다. */}
+        <div className="mt-6">
           <button
             type="button"
             onClick={close}
@@ -149,14 +133,9 @@ export function NoticeModal() {
           >
             확인했습니다
           </button>
-
-          <button
-            type="button"
-            onClick={closeForToday}
-            className="w-full py-2 font-mono text-[11px] tracking-wider text-ink-3 hover:text-ink-2 transition-colors"
-          >
-            오늘 하루 보지 않기
-          </button>
+          <p className="mt-2.5 font-mono text-[10px] tracking-wider text-ink-3">
+            확인을 누르시면 배경음악이 함께 시작됩니다 🎵
+          </p>
         </div>
       </div>
     </div>,

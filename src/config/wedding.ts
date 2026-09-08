@@ -55,7 +55,7 @@ const bride: Person = {
   given: "건영",
   en: "Geonyoung", // 영문 표기는 원하시는 철자로 바꾸세요 (Gunyoung, Keonyoung 등)
   phone: "010-0000-0000", // TODO: 신부 연락처
-  rank: "차녀", // 언니가 있어 딸 중 둘째
+  rank: "둘째딸", // 언니가 있어 딸 중 둘째
   father: { name: "박상정", phone: "010-0000-0000" },
   mother: { name: "강명숙", phone: "010-0000-0000" },
 };

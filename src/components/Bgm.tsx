@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { wedding } from "@/config/wedding";
+import { NOTICE_CLOSED_EVENT } from "./NoticeModal";
 
 export function Bgm() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [available, setAvailable] = useState(false);
-  const [toastVisible, setToastVisible] = useState(true);
-  const [toastState, setToastState] = useState<"counting" | "playing" | "blocked">("counting");
-  const [countdown, setCountdown] = useState(5);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastState, setToastState] = useState<"playing" | "blocked">("playing");
   const userMutedRef = useRef(false);
 
   // 음원 파일 존재 확인
@@ -28,42 +28,37 @@ export function Bgm() {
     };
   }, []);
 
-  // 5초 카운트다운 및 자동 재생 시도
+  /**
+   * 안내 팝업의 "확인했습니다"를 누르는 순간 재생을 시작합니다.
+   *
+   * 모바일 브라우저는 사용자 제스처 없이는 오디오를 막습니다.
+   * 팝업을 닫는 그 터치가 바로 그 제스처라, 타이머로 몰래 트는 것보다 훨씬 확실합니다.
+   */
   useEffect(() => {
     if (!available) return;
 
-    const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    const playTimer = setTimeout(async () => {
+    const start = async () => {
       if (userMutedRef.current) return;
       const el = audioRef.current;
-      if (!el) return;
+      if (!el || !el.paused) return;
 
       try {
         el.volume = 0.35;
         await el.play();
         setPlaying(true);
         setToastState("playing");
-        // 재생 성공 후 4초 뒤 안내 토스트 자동 닫힘
+        setToastVisible(true);
+        // 재생 안내 토스트는 4초 뒤 스스로 닫힘
         setTimeout(() => setToastVisible(false), 4000);
       } catch {
-        // 브라우저 자동재생 정책에 의해 차단된 경우 (사용자 인터랙션 필요)
+        // 그래도 막혔다면 화면 아무 곳이나 터치하도록 안내
         setToastState("blocked");
+        setToastVisible(true);
       }
-    }, 5000);
-
-    return () => {
-      clearInterval(interval);
-      clearTimeout(playTimer);
     };
+
+    window.addEventListener(NOTICE_CLOSED_EVENT, start);
+    return () => window.removeEventListener(NOTICE_CLOSED_EVENT, start);
   }, [available]);
 
   // 브라우저 정책으로 차단된 경우 하객의 첫 터치/클릭 시 재생
@@ -80,6 +75,7 @@ export function Bgm() {
         await el.play();
         setPlaying(true);
         setToastState("playing");
+        setToastVisible(true);
         setTimeout(() => setToastVisible(false), 3500);
       } catch {
         /* 무시 */
@@ -135,41 +131,16 @@ export function Bgm() {
         <aside
           role="status"
           aria-live="polite"
-          aria-label="배경음악 재생 및 음소거 안내"
+          aria-label="배경음악 안내"
           className="fixed top-3 left-4 right-[60px] z-[65] mx-auto max-w-[340px] animate-fade-in transition-all duration-300"
         >
           <div className="relative overflow-hidden rounded-[18px] border border-line/80 bg-paper/95 p-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-md">
-            {/* 상단 5초 진행 바 (카운트다운 중일 때) */}
-            {toastState === "counting" && (
-              <div className="absolute top-0 left-0 h-[2.5px] w-full bg-line/50">
-                <div
-                  className="h-full bg-accent transition-all duration-1000 ease-linear"
-                  style={{ width: `${(countdown / 5) * 100}%` }}
-                />
-              </div>
-            )}
-
             <div className="flex items-start gap-2.5">
               <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent text-[12px]">
                 🎵
               </span>
 
               <div className="flex-1 pr-1">
-                {toastState === "counting" && (
-                  <>
-                    <p className="text-[12.5px] font-semibold text-ink leading-tight">
-                      {countdown > 0 ? `${countdown}초 뒤 배경음악이 재생됩니다` : "배경음악을 시작합니다"}
-                    </p>
-                    <p className="mt-1 text-[11.5px] text-ink-2 leading-relaxed">
-                      소리를 끄고 싶으시면 우측 상단{" "}
-                      <span className="font-semibold text-ink inline-flex items-center">
-                        음소거 버튼(🔇)
-                      </span>
-                      을 눌러주세요.
-                    </p>
-                  </>
-                )}
-
                 {toastState === "playing" && (
                   <>
                     <p className="text-[12.5px] font-semibold text-accent leading-tight">
