@@ -35,7 +35,7 @@ export function Footer() {
 
       {/* 만든 사람 서명 — 지우셔도 됩니다 */}
       <p className="mt-5 font-mono text-[9px] tracking-[0.16em] text-ink-3/70 uppercase">
-        Handcrafted with Next.js
+        모바일 청첩장 제작을 원하시면 신랑에게 부탁하세요
         <span className="mx-1.5 text-line">·</span>
         guwonsoft.com
       </p>

@@ -42,11 +42,11 @@ const groom: Person = {
   name: "김준일",
   given: "준일",
   en: "Junil",
-  phone: "010-0000-0000", // TODO: 신랑 연락처
+  phone: "010-9988-1916", // TODO: 신랑 연락처
   rank: "아들", // 여동생만 있어 아들로는 외아들 → "장남"으로 바꾸셔도 됩니다.
   // 고인이신 경우 late: true 를 추가하면 이름 앞에 '故'가 붙고 연락처에서 숨겨집니다.
-  father: { name: "김택년", phone: "010-0000-0000" },
-  mother: { name: "이회영", phone: "010-0000-0000" },
+  father: { name: "김택년", phone: "010-6616-1916" },
+  mother: { name: "이회영", phone: "010-6584-5242" },
 };
 
 /* ── 신부 ───────────────────────────────────────────────── */
@@ -54,10 +54,10 @@ const bride: Person = {
   name: "박건영",
   given: "건영",
   en: "Geonyoung", // 영문 표기는 원하시는 철자로 바꾸세요 (Gunyoung, Keonyoung 등)
-  phone: "010-0000-0000", // TODO: 신부 연락처
+  phone: "010-2624-3101", // TODO: 신부 연락처
   rank: "둘째딸", // 언니가 있어 딸 중 둘째
-  father: { name: "박상정", phone: "010-0000-0000" },
-  mother: { name: "강명숙", phone: "010-0000-0000" },
+  father: { name: "박상정", phone: "010-2846-2807" },
+  mother: { name: "강명숙", phone: "010-3099-3101" },
 };
 
 export const wedding = {
