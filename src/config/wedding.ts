@@ -83,7 +83,9 @@ export const wedding = {
     /** 지도 앱 바로가기 */
     naverMapUrl: "https://map.naver.com/p/search/%EB%B6%80%EC%A0%84%EA%B5%90%ED%9A%8C",
     kakaoMapUrl: "https://map.kakao.com/link/map/%EB%B6%80%EC%A0%84%EA%B5%90%ED%9A%8C,35.200195,129.07848",
-    tmapUrl: "https://apis.openapi.sk.com/tmap/app/routes?appKey=&name=%EB%B6%80%EC%A0%84%EA%B5%90%ED%9A%8C&lon=129.07848&lat=35.200195",
+    // T맵은 appKey가 필요한 REST 주소 대신 앱 실행 스킴(tmap://)을 씁니다.
+    // 비워두면 Location.tsx가 좌표로 알아서 만들어 줍니다.
+    tmapUrl: "",
   },
 
   /* ── 교통 안내 ─────────────────────────────────────────── */
