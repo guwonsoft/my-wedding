@@ -178,7 +178,7 @@ export const wedding = {
     url: "https://wedding.guwonsoft.com",
     title: "김준일 ♥ 박건영 결혼합니다",
     description: "2026년 11월 7일 토요일 오전 11시 · 부전교회 3층 세움홀",
-    // 카톡/문자 공유 썸네일. public/og.jpg (1200x630, 갤러리 09번 웨딩사진)
+    // 카톡/문자 공유 썸네일. public/og.jpg (1200x630, 갤러리 09번 웨딩사진 상반신 크롭)
     // 다른 사진으로 바꾸려면 public/og.jpg 를 교체하면 됩니다.
     ogImage: "/og.jpg",
   },
