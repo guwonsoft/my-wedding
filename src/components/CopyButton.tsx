@@ -32,11 +32,14 @@ export function CopyButton({
   label = "복사",
   doneLabel = "복사됨",
   className = "",
+  size = "sm",
 }: {
   value: string;
   label?: string;
   doneLabel?: string;
   className?: string;
+  /** lg — 손가락으로 누르기 쉬운 44px 높이. 어르신 하객이 많은 화면에 씁니다. */
+  size?: "sm" | "lg";
 }) {
   const [done, setDone] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,9 +57,11 @@ export function CopyButton({
         timer.current = setTimeout(() => setDone(false), 1600);
       }}
       aria-live="polite"
-      className={`inline-flex shrink-0 items-center gap-1.5 border px-2.5 py-1.5 font-mono text-[10px] tracking-[0.12em] transition-colors duration-300 ${
-        done ? "border-accent text-accent" : "border-line text-ink-3 active:bg-paper-2"
-      } ${className}`}
+      className={`inline-flex shrink-0 items-center gap-1.5 border font-mono tracking-[0.12em] transition-colors duration-300 ${
+        size === "lg"
+          ? "min-h-[44px] px-4 py-2.5 text-[11.5px]"
+          : "px-2.5 py-1.5 text-[10px]"
+      } ${done ? "border-accent text-accent" : "border-line text-ink-3 active:bg-paper-2"} ${className}`}
     >
       {done ? (
         <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>

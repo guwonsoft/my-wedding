@@ -80,7 +80,7 @@ export function Location() {
         style={{ ["--reveal-delay" as string]: "60ms" }}
       >
         <p className="flex-1 text-[12.5px] leading-relaxed text-ink-2">{fullAddress}</p>
-        <CopyButton value={fullAddress} label="주소복사" />
+        <CopyButton value={fullAddress} label="주소복사" size="lg" />
       </div>
 
       {/* 지도 앱 */}
