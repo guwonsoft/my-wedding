@@ -56,7 +56,7 @@ const bride: Person = {
   en: "Geonyoung", // 영문 표기는 원하시는 철자로 바꾸세요 (Gunyoung, Keonyoung 등)
   phone: "010-2624-3101", // TODO: 신부 연락처
   rank: "둘째딸", // 언니가 있어 딸 중 둘째
-  father: { name: "박상정", phone: "010-2846-2807" },
+  father: { name: "박상정", phone: "010-2946-2807" },
   mother: { name: "강명숙", phone: "010-3099-3101" },
 };
 
@@ -180,8 +180,10 @@ export const wedding = {
     url: "https://wedding.guwonsoft.com",
     title: "김준일 ♥ 박건영 결혼합니다",
     description: "2026년 11월 7일 토요일 오전 11시 · 부전교회 3층 세움홀",
-    // 카톡/문자 공유 썸네일. public/og.jpg (1200x630, 갤러리 09번 웨딩사진 상반신 크롭)
-    // 다른 사진으로 바꾸려면 public/og.jpg 를 교체하면 됩니다.
+    // 카톡/문자 공유 썸네일. public/og.jpg (1200x600, 갤러리 09번 웨딩사진 상반신 크롭)
+    // 카카오톡 대화방 미리보기는 2:1로 강제 리사이즈하므로 반드시 2:1을 유지하세요.
+    // 비율이 어긋나면 상하가 잘리거나 여백이 생깁니다.
+    // 크기를 바꾸면 layout.tsx 의 ogImages 와 Share.tsx 의 imageWidth/Height 도 함께 맞춰야 합니다.
     ogImage: "/og.jpg",
   },
 };

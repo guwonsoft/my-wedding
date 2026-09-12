@@ -45,6 +45,10 @@ export function Share() {
         title: wedding.meta.title,
         description: `${formatKoreanDateTime(wedding.date)}\n${wedding.venue.name} ${wedding.venue.hall}`,
         imageUrl: new URL(wedding.meta.ogImage || "/opengraph-image", wedding.meta.url).toString(),
+        // 크기를 명시하지 않으면 카카오가 이미지를 작은 썸네일로 띄울 수 있습니다.
+        // og.jpg 의 실제 크기(2:1)와 반드시 같아야 합니다.
+        imageWidth: 1200,
+        imageHeight: 600,
         link: { mobileWebUrl: wedding.meta.url, webUrl: wedding.meta.url },
       },
       buttons: [

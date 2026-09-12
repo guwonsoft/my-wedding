@@ -48,3 +48,6 @@ public/gallery/*.png
 
 # 갤러리 원본 사진 (인쇄용 대용량 PNG — 변환본만 public/gallery 에 커밋)
 /웨딩사진/
+
+# 도구가 만든 임시 출력물
+/Claude outputs/

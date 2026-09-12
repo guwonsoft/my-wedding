@@ -31,7 +31,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || wedding.meta.url;
 
 // ogImage를 비워두면 app/opengraph-image.tsx 가 그린 이미지를 Next가 자동으로 붙입니다.
 const ogImages = wedding.meta.ogImage
-  ? [{ url: wedding.meta.ogImage, width: 1200, height: 630, alt: wedding.meta.title }]
+  ? [{ url: wedding.meta.ogImage, width: 1200, height: 600, alt: wedding.meta.title }]
   : undefined;
 
 export const metadata: Metadata = {
