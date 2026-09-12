@@ -9,27 +9,18 @@ const q = encodeURIComponent(venue.name);
 /**
  * 지도 앱 바로가기 — config에 직접 URL을 넣으면 그 값이 우선.
  *
- * T맵만 https 주소가 아니라 앱 실행 스킴(tmap://)입니다.
- * SK의 REST 주소(apis.openapi.sk.com/.../routes)는 appKey가 있어야 하고,
- * 키 없이 부르면 하객에게 401 JSON 에러 화면이 그대로 보입니다.
- * 스킴 방식은 키가 필요 없고 iOS·안드로이드 모두에서 앱이 바로 열립니다.
+ * T맵은 뺐습니다. 웹 주소(apis.openapi.sk.com)는 appKey가 있어야 하고,
+ * 앱 실행 스킴(tmap://)은 카카오톡 인앱 브라우저에서 막히거나
+ * 앱이 없으면 아무 반응이 없어 하객에게 "눌러도 안 되는 버튼"이 됩니다.
  */
 const NAV_LINKS = [
   {
     name: "카카오맵",
     href: venue.kakaoMapUrl || `https://map.kakao.com/link/to/${q},${venue.lat},${venue.lng}`,
-    /** http(s) 링크만 새 탭으로 — 커스텀 스킴에 target을 주면 빈 탭만 남습니다. */
-    web: true,
   },
   {
     name: "네이버지도",
     href: venue.naverMapUrl || `https://map.naver.com/p/search/${q}`,
-    web: true,
-  },
-  {
-    name: "T map",
-    href: venue.tmapUrl || `tmap://route?goalname=${q}&goalx=${venue.lng}&goaly=${venue.lat}`,
-    web: false,
   },
 ];
 
@@ -85,7 +76,7 @@ export function Location() {
 
       {/* 지도 앱 */}
       <div
-        className="mt-4 grid grid-cols-3 gap-1.5"
+        className="mt-4 grid grid-cols-2 gap-1.5"
         data-reveal
         style={{ ["--reveal-delay" as string]: "100ms" }}
       >
@@ -93,7 +84,8 @@ export function Location() {
           <a
             key={link.name}
             href={link.href}
-            {...(link.web ? { target: "_blank", rel: "noreferrer noopener" } : {})}
+            target="_blank"
+            rel="noreferrer noopener"
             className="flex items-center justify-center gap-1.5 border border-line py-3 text-[12px] text-ink-2 transition-colors active:bg-paper-2"
           >
             {link.name}
