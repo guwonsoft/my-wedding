@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { wedding } from "@/config/wedding";
 
 /** 팝업이 닫힐 때 알리는 이벤트 — 배경음악(Bgm)이 이 신호를 받아 재생을 시작합니다. */
 export const NOTICE_CLOSED_EVENT = "wedding:notice-closed";
@@ -10,9 +11,10 @@ export function NoticeModal() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // 안내사항은 매 방문마다 반드시 보여드립니다. (숨김 저장 없음)
+  // 첫 화면 자동 표시는 wedding.notice.autoOpen 으로 켜고 끕니다. (지금은 꺼짐)
   useEffect(() => {
     setMounted(true);
+    if (!wedding.notice.autoOpen) return;
     const timer = setTimeout(() => setOpen(true), 400);
     return () => clearTimeout(timer);
   }, []);

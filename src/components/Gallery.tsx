@@ -22,7 +22,7 @@ export function Gallery() {
   return (
     <Section id="gallery">
       <div className="flex flex-col items-center">
-        <SectionLabel index={3} en="Gallery" ko="우리의 순간" />
+        <SectionLabel index={4} en="Gallery" ko="우리의 순간" />
         <p
           className="mt-4 font-mono text-[10px] tracking-[0.18em] text-ink-3 tnum"
           data-reveal

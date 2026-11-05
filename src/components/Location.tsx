@@ -30,7 +30,7 @@ export function Location() {
   return (
     <Section id="location">
       <div className="flex flex-col items-center">
-        <SectionLabel index={4} en="Location" ko="오시는 길" />
+        <SectionLabel index={5} en="Location" ko="오시는 길" />
 
         <p
           className="mt-8 font-[family-name:var(--font-ko-serif)] text-[17px] tracking-[0.06em] text-ink"

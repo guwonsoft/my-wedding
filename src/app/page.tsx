@@ -24,10 +24,11 @@ export default function Page() {
       <Cover />
       <Greeting />
       <CalendarSection />
+      {/* 어르신들이 계좌를 찾기 쉽도록 예식 안내 바로 아래에 둡니다 (예전엔 참석 여부 다음) */}
+      <Accounts />
       <Gallery />
       <Location />
       <Rsvp />
-      <Accounts />
       <Share />
       <Footer />
 
