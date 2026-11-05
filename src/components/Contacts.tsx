@@ -1,4 +1,5 @@
 import { wedding, type Person } from "@/config/wedding";
+import { Section, SectionLabel } from "./ui";
 
 type Row = { role: string; name: string; phone: string; late?: boolean };
 
@@ -104,5 +105,17 @@ function MailIcon() {
       <rect x="1.8" y="3.5" width="12.4" height="9" rx="1.2" stroke="currentColor" strokeWidth="1.1" />
       <path d="m2.4 4.6 5.6 4 5.6-4" stroke="currentColor" strokeWidth="1.1" />
     </svg>
+  );
+}
+
+/** 연락처를 하나의 섹션으로 — 계좌와 자리를 바꾸면서 인사말에서 분리했습니다. */
+export function ContactsSection() {
+  return (
+    <Section id="contacts">
+      <div className="flex flex-col items-center text-center">
+        <SectionLabel index={4} en="Contact" ko="연락하기" />
+        <Contacts />
+      </div>
+    </Section>
   );
 }

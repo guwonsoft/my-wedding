@@ -13,7 +13,7 @@ export function CalendarSection() {
   return (
     <Section id="calendar" tone="deep">
       <div className="flex flex-col items-center">
-        <SectionLabel index={2} en="The Day" ko="예식 안내" />
+        <SectionLabel index={3} en="The Day" ko="예식 안내" />
 
         <p
           className="mt-8 font-[family-name:var(--font-ko-serif)] text-[16px] tracking-[0.04em] text-ink"

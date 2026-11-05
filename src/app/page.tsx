@@ -5,6 +5,7 @@ import { Gallery } from "@/components/Gallery";
 import { Location } from "@/components/Location";
 import { Rsvp } from "@/components/Rsvp";
 import { Accounts } from "@/components/Accounts";
+import { ContactsSection } from "@/components/Contacts";
 import { Share } from "@/components/Share";
 import { Footer } from "@/components/Footer";
 import { Dock } from "@/components/Dock";
@@ -23,9 +24,11 @@ export default function Page() {
     <main className="canvas">
       <Cover />
       <Greeting />
-      <CalendarSection />
-      {/* 어르신들이 계좌를 찾기 쉽도록 예식 안내 바로 아래에 둡니다 (예전엔 참석 여부 다음) */}
+      {/* 어르신들이 계좌를 찾기 쉽도록 인사말 바로 아래(예전 연락처 자리)에 둡니다 */}
       <Accounts />
+      <CalendarSection />
+      {/* 연락처는 예전 계좌 자리(예식 안내 아래)로 */}
+      <ContactsSection />
       <Gallery />
       <Location />
       <Rsvp />

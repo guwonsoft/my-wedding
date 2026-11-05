@@ -97,7 +97,7 @@ export function Rsvp() {
   return (
     <Section id="rsvp" tone="deep">
       <div className="flex flex-col items-center text-center">
-        <SectionLabel index={6} en="R.S.V.P" ko={wedding.rsvp.title} />
+        <SectionLabel index={7} en="R.S.V.P" ko={wedding.rsvp.title} />
         <p
           className="mt-7 text-[13.5px] leading-[2] whitespace-pre-line text-ink-2"
           data-reveal

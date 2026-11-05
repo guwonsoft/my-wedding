@@ -110,7 +110,7 @@ export function Share() {
       )}
 
       <div className="flex flex-col items-center text-center">
-        <SectionLabel index={7} en="Share" ko="청첩장 공유하기" />
+        <SectionLabel index={8} en="Share" ko="청첩장 공유하기" />
 
         {/* 카카오 키가 없으면 카톡 버튼은 빠집니다 — 남은 개수에 맞춰 칸을 나눕니다. */}
         <div

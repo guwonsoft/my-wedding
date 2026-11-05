@@ -17,7 +17,7 @@ export function Accounts() {
   return (
     <Section id="accounts">
       <div className="flex flex-col items-center text-center">
-        <SectionLabel index={3} en="With Heart" ko="마음 전하실 곳" />
+        <SectionLabel index={2} en="With Heart" ko="마음 전하실 곳" />
         <p
           className="mt-7 text-[13px] leading-[2] text-ink-2"
           data-reveal

@@ -1,6 +1,5 @@
 import { wedding } from "@/config/wedding";
 import { Section, SectionLabel, VerticalRule } from "./ui";
-import { Contacts } from "./Contacts";
 import { NoticeButton } from "./NoticeModal";
 
 export function Greeting() {
@@ -47,9 +46,6 @@ export function Greeting() {
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3" data-reveal style={{ ["--reveal-delay" as string]: "200ms" }}>
           <NoticeButton />
         </div>
-
-        {/* 연락처는 접어두지 않고 그대로 펼쳐 보여드립니다 */}
-        <Contacts />
       </div>
     </Section>
   );
